@@ -1,0 +1,15 @@
+# Phase 1 — web framework and testing
+fastapi          # The web framework
+uvicorn          # The server that runs FastAPI
+httpx            # Required by FastAPI's TestClient to make test requests
+pytest           # The testing framework
+
+# Phase 2 — ArUco marker detection
+# We use opencv-contrib-python instead of plain opencv-python because:
+# - opencv-python contains only the core OpenCV modules.
+# - The ArUco detector lives in cv2.aruco, which is part of OpenCV's
+#   "contrib" (contributed/extra) modules.
+# - opencv-contrib-python bundles BOTH the core AND contrib modules in
+#   one package, so we only need one install.
+# - Installing both opencv-python AND opencv-contrib-python would conflict.
+opencv-contrib-python

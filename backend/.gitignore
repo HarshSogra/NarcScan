@@ -1,0 +1,12 @@
+# Virtual environment — never commit this
+.venv/
+
+# Python bytecode — auto-generated, not needed in git
+__pycache__/
+*.pyc
+
+# Real environment variables — keep secrets out of git
+.env
+
+# Pytest cache — auto-generated during test runs
+.pytest_cache/
