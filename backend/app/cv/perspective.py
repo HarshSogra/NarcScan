@@ -1,4 +1,4 @@
-﻿"""
+"""
 perspective.py
 ==============
 
@@ -29,31 +29,28 @@ Marker layout on the physical card
     ID 2 -> bottom-right corner of the card
     ID 3 -> bottom-left corner of the card
 
-Why marker CENTERS rather than marker CORNERS?
------------------------------------------------
-Each ArUco marker has four corner points detected by OpenCV.  Ideally we
-would pick the single corner of each marker that is closest to the physical
-corner of the card.  For example, for marker ID 0 (top-left) we would use
-its bottom-right corner, because that corner points inward toward the card.
+Why marker OUTER CORNERS?
+--------------------------
+OpenCV's ArUco detector returns four corner points for each marker in a
+consistent clockwise order starting from the top-left corner of the marker:
 
-However, in this first prototype we use the CENTER of each marker instead.
-The center is simply the mean x and mean y of the marker's four detected
-corners.
+    index 0 -> top-left  of marker
+    index 1 -> top-right of marker
+    index 2 -> bottom-right of marker
+    index 3 -> bottom-left  of marker
 
-Why?
-  1. Simplicity - no assumptions about which corner index to pick.
-  2. Robustness - OpenCV does not guarantee a fixed corner ordering when
-     the marker is rotated.  The center is always unambiguous.
-  3. Acceptable accuracy - for a prototype, centering the four reference
-     points gives us a good-enough homography.
+We use the OUTER corner of each marker — the single corner that faces away
+from the card center — and map it to the corresponding edge of the output
+canvas.  This ensures the full marker is inside the output image.
 
-Limitation:
-  The marker centers are NOT the physical corners of the card.  They lie
-  slightly inside the card, offset by roughly half the marker size.
-  This means the warped image will include the full markers but may clip
-  a tiny strip at the very edge of the card, and the destination rectangle
-  will be scaled to the center-to-center span, not the full card span.
-  A future improvement would use the specific inner corner of each marker.
+    Marker ID 0 (top-left card corner)     -> use its top-left     corner (index 0)
+    Marker ID 1 (top-right card corner)    -> use its top-right    corner (index 1)
+    Marker ID 2 (bottom-right card corner) -> use its bottom-right corner (index 2)
+    Marker ID 3 (bottom-left card corner)  -> use its bottom-left  corner (index 3)
+
+Using marker centers mapped to canvas edges caused the outer half of every
+marker to be clipped.  Using inner corners mapped to canvas edges had the
+opposite problem — it clipped the entire marker off the other side.
 
 Output dimensions
 -----------------
@@ -112,6 +109,29 @@ def _marker_center(corners: list) -> tuple:
     center_x = float(np.mean(pts[:, 0]))
     center_y = float(np.mean(pts[:, 1]))
     return center_x, center_y
+
+
+def _marker_corner(corners: list, corner_index: int) -> tuple:
+    """
+    Return a specific corner of a marker by index.
+
+    OpenCV returns ArUco corners in clockwise order starting from top-left:
+        index 0 -> top-left  of marker
+        index 1 -> top-right of marker
+        index 2 -> bottom-right of marker
+        index 3 -> bottom-left  of marker
+
+    Parameters
+    ----------
+    corners      : list of 4 [x, y] points for the marker.
+    corner_index : which of the four corners to return (0-3).
+
+    Returns
+    -------
+    (x, y) as floats.
+    """
+    pts = np.array(corners, dtype=np.float32)   # shape: (4, 2)
+    return float(pts[corner_index, 0]), float(pts[corner_index, 1])
 
 
 # ---------------------------------------------------------------------------
@@ -194,19 +214,31 @@ def correct_perspective(
         }
 
     # ------------------------------------------------------------------
-    # Step 2 - Compute the four source points (marker centers)
+    # Step 2 - Compute the four source points (marker outer corners)
     # ------------------------------------------------------------------
-    # We extract the center of each marker to use as our reference point
-    # for that card corner.  See the module docstring for why we use
-    # centers instead of specific marker corners.
+    # We use the OUTER corner of each marker — the corner that faces away
+    # from the card interior — and map it to the corresponding canvas edge.
+    # This keeps every marker fully visible inside the warped output.
+    #
+    # OpenCV corner ordering (clockwise from top-left of each marker):
+    #   index 0 -> top-left     of marker
+    #   index 1 -> top-right    of marker
+    #   index 2 -> bottom-right of marker
+    #   index 3 -> bottom-left  of marker
+    #
+    # Card layout mapping (outer corner = corner facing card edge):
+    #   ID 0 (card top-left)     -> marker's top-left     corner (index 0)
+    #   ID 1 (card top-right)    -> marker's top-right    corner (index 1)
+    #   ID 2 (card bottom-right) -> marker's bottom-right corner (index 2)
+    #   ID 3 (card bottom-left)  -> marker's bottom-left  corner (index 3)
     #
     # Source point order MUST match destination point order exactly.
     # We use: [top-left, top-right, bottom-right, bottom-left]
 
-    tl = _marker_center(markers[CORNER_MARKER_IDS["top_left"]])
-    tr = _marker_center(markers[CORNER_MARKER_IDS["top_right"]])
-    br = _marker_center(markers[CORNER_MARKER_IDS["bottom_right"]])
-    bl = _marker_center(markers[CORNER_MARKER_IDS["bottom_left"]])
+    tl = _marker_corner(markers[CORNER_MARKER_IDS["top_left"]],     0)  # top-left     of marker 0
+    tr = _marker_corner(markers[CORNER_MARKER_IDS["top_right"]],    1)  # top-right    of marker 1
+    br = _marker_corner(markers[CORNER_MARKER_IDS["bottom_right"]], 2)  # bottom-right of marker 2
+    bl = _marker_corner(markers[CORNER_MARKER_IDS["bottom_left"]],  3)  # bottom-left  of marker 3
 
     # Build the source-point array that OpenCV expects: shape (4, 2), float32.
     # Ordering: top-left, top-right, bottom-right, bottom-left
