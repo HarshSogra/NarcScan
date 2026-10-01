@@ -18,16 +18,28 @@ corners.  The test strip is placed in a FIXED CENTRAL AREA of the card:
     ┌──────────────────────────────────┐
     │  [ID 0]                  [ID 1]  │
     │                                  │
-    │       GREY CALIBRATION REGION    │  ← y = 25 % – 45 %  (Phase 4)
+    │       GREY CALIBRATION REGION    │  <- y = 25 % - 45 %  (Phase 4)
     │                                  │
-    │       ┌──────────────────┐       │
-    │       │                  │       │
-    │       │   TEST STRIP     │       │  ← y = 50 % – 80 %  (Phase 5)
-    │       │                  │       │
-    │       └──────────────────┘       │
+    │         ┌──────────────────┐       │
+    │         │                  │       │
+    │         │   TEST STRIP     │       │  <- y = 54 % - 66 %  (Phase 5)
+    │         │  (80 mm x 28 mm) │       │
+    │         └──────────────────┘       │
     │                                  │
     │  [ID 3]                  [ID 2]  │
     └──────────────────────────────────┘
+
+Geometry source
+---------------
+The ROI fractions below are derived from the A4 printed template defined in
+``backend/tools/generate_a4_template.py``.  Do NOT change these independently.
+If you change the physical strip placement on the template, regenerate the
+fractions by running that script and copying the reported values here.
+
+Template physical parameters:
+  Strip size      : 80 mm x 28 mm
+  Strip centre    : 50 % horizontal, 60 % vertical of card interior
+  Card interior   : the area between inner edges of the four ArUco markers
 
 Design rationale
 ----------------
@@ -36,12 +48,7 @@ Design rationale
   it works regardless of OUTPUT_WIDTH / OUTPUT_HEIGHT from perspective.py.
 
 * All ROI configuration is in ONE place (the STRIP_ROI_* constants below).
-  Adjust those constants after testing with the real physical card.
-
-* Phase 3 normalises the card to approximately 1000 × 700 pixels.
-  The default fractions produce a strip region of ~400 × 210 pixels at
-  that resolution, which is a generous bounding box for a standard lateral
-  flow test strip.
+  Adjust those constants by re-running generate_a4_template.py.
 
 * The strip ROI is intentionally FIXED (not auto-detected) for this
   prototype.  Automatic strip detection is out of scope for Phase 5.
@@ -49,37 +56,46 @@ Design rationale
 Pipeline position
 -----------------
   Image
-  → ArUco Detection       (Phase 2)
-  → Perspective Correction (Phase 3)
-  → Grey Calibration      (Phase 4)
-  → Test Strip Extraction  (Phase 5)  ← this module
-  → CIELAB + CIEDE2000    (Phase 6, future)
+  -> ArUco Detection       (Phase 2)
+  -> Perspective Correction (Phase 3)
+  -> Grey Calibration      (Phase 4)
+  -> Test Strip Extraction  (Phase 5)  <- this module
+  -> CIELAB + CIEDE2000    (Phase 6, future)
 """
 
 import numpy as np
 from typing import Optional, Tuple
 
 # ---------------------------------------------------------------------------
-# Constants — Test Strip ROI (all values are fractions of image dimensions)
+# Constants -- Test Strip ROI (all values are fractions of image dimensions)
 # ---------------------------------------------------------------------------
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │  ADJUST THESE AFTER TESTING WITH THE REAL PHYSICAL CARD               │
-# │  They are the ONLY values you need to change to reposition the strip.  │
-# └─────────────────────────────────────────────────────────────────────────┘
+# +-------------------------------------------------------------------------+
+# |  THESE VALUES ARE DERIVED FROM THE PHYSICAL A4 TEMPLATE.               |
+# |  Source: backend/tools/generate_a4_template.py                         |
+# |                                                                         |
+# |  Template parameters:                                                   |
+# |    Strip physical size : 80 mm x 28 mm                                 |
+# |    Strip centre        : 50% horizontal, 60% vertical of card interior  |
+# |    Card interior       : area between inner edges of ArUco markers      |
+# |                                                                         |
+# |  To change the strip position, edit generate_a4_template.py and        |
+# |  re-print the template.  Then copy the reported fractions here.        |
+# +-------------------------------------------------------------------------+
 #
 # Horizontal extent (fraction of image width):
-#   0.30 … 0.70  →  central 40 % of the card width.
-#   Keeps the ROI well away from the left/right marker edges.
+#   0.2336 ... 0.7669  ->  central ~53 % of the card interior.
+#   Derived from 80 mm strip centred at 50% of card interior width.
 #
 # Vertical extent (fraction of image height):
-#   0.50 … 0.80  →  lower-centre of the card.
-#   Sits clearly BELOW the grey calibration region (y = 0.25 – 0.45)
+#   0.5411 ... 0.6593  ->  lower-centre of the card interior.
+#   Derived from 28 mm strip centred at 60% of card interior height.
+#   Sits clearly BELOW the grey calibration region (y = 0.25 - 0.45)
 #   and above the bottom marker row.
 
-STRIP_ROI_LEFT_FRAC:   float = 0.30   # left  edge, fraction of image width
-STRIP_ROI_RIGHT_FRAC:  float = 0.70   # right edge, fraction of image width
-STRIP_ROI_TOP_FRAC:    float = 0.50   # top   edge, fraction of image height
-STRIP_ROI_BOTTOM_FRAC: float = 0.80   # bottom edge, fraction of image height
+STRIP_ROI_LEFT_FRAC:   float = 0.2336  # left  edge, fraction of image width
+STRIP_ROI_RIGHT_FRAC:  float = 0.7669  # right edge, fraction of image width
+STRIP_ROI_TOP_FRAC:    float = 0.5411  # top   edge, fraction of image height
+STRIP_ROI_BOTTOM_FRAC: float = 0.6593  # bottom edge, fraction of image height
 
 # Minimum ROI area required for a meaningful extraction (pixels²).
 MIN_STRIP_AREA_PX: int = 100
