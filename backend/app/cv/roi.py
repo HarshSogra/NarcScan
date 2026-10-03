@@ -92,10 +92,10 @@ from typing import Optional, Tuple
 #   Sits clearly BELOW the grey calibration region (y = 0.25 - 0.45)
 #   and above the bottom marker row.
 
-STRIP_ROI_LEFT_FRAC:   float = 0.2336  # left  edge, fraction of image width
-STRIP_ROI_RIGHT_FRAC:  float = 0.7669  # right edge, fraction of image width
-STRIP_ROI_TOP_FRAC:    float = 0.5411  # top   edge, fraction of image height
-STRIP_ROI_BOTTOM_FRAC: float = 0.6593  # bottom edge, fraction of image height
+STRIP_ROI_LEFT_FRAC:   float = 0.3336  # left  edge, fraction of image width
+STRIP_ROI_RIGHT_FRAC:  float = 0.8300  # right edge, fraction of image width
+STRIP_ROI_TOP_FRAC:    float = 0.6050  # top   edge, fraction of image height
+STRIP_ROI_BOTTOM_FRAC: float = 0.6750  # bottom edge, fraction of image height
 
 # Minimum ROI area required for a meaningful extraction (pixels²).
 MIN_STRIP_AREA_PX: int = 100

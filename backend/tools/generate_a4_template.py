@@ -80,9 +80,9 @@ STRIP_CENTRE_Y_INTERIOR_FRAC: float = 0.60
 
 # --- Scale reference bar ---
 SCALE_BAR_MM:           float = 50.0   # physical length of the printed scale bar
-SCALE_BAR_X_MM:         float = 10.0   # distance from left page edge to bar start
+SCALE_BAR_X_MM:         float = 80.0   # distance from left page edge to bar start
 SCALE_BAR_Y_MM:         float = 280.0  # distance from top  page edge to bar centre
-SCALE_BAR_THICKNESS_MM: float = 2.0
+SCALE_BAR_THICKNESS_MM: float = 1.0
 
 # --- Visual style ---
 BG_GREY:          int = 180       # 0-255 grey level for the background
